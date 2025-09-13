@@ -1,0 +1,15 @@
+# General OS / Editor
+.DS_Store
+.vscode/
+.idea/
+
+node_modules/
+dist/
+
+# Protoc temporary / artifacts
+*.pb.go
+# Keep proto source tracked; ignore compiled TS generation (already ignored by src/gen above)
+
+# Misc
+npm-debug.log*
+yarn-debug.log*

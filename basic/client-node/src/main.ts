@@ -1,11 +1,10 @@
 import { ProtomuxClient, encodeMessage, decodeMessage } from '@protomux/client';
+// Import requires .js extension under NodeNext ESM even though source is TS; ts-node maps it automatically.
 import { ListBooksRequest, ListBooksResponse, CreateBookRequest, CreateBookResponse } from './gen/proto/book_service.js';
 
 // FQ type names used by server routing
 const TYPE_LIST_BOOKS_REQ = 'examples.book.ListBooksRequest';
 const TYPE_CREATE_BOOK_REQ = 'examples.book.CreateBookRequest';
-
-// encodeMessage / decodeMessage now provided by @protomux/client
 
 async function run() {
   const client = new ProtomuxClient('ws://localhost:3000/ws');

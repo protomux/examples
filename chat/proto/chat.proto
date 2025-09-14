@@ -1,0 +1,40 @@
+syntax = "proto3";
+package examples.chat;
+option go_package = "github.com/protomux/protomux/examples/chat/proto;chatpb";
+
+// Simple chat messages. For brevity we use one service with two RPCs.
+service ChatService {
+  // Send a message to a room (unary). Server will publish MessageEvent to subscribers of topic chat:room:<room>.
+  rpc SendMessage(SendMessageRequest) returns (SendMessageResponse);
+  // Join room is optional placeholder (server may send initial history); returns OK.
+  rpc JoinRoom(JoinRoomRequest) returns (JoinRoomResponse);
+}
+
+message SendMessageRequest {
+  string room = 1;
+  string user = 2;
+  string text = 3;
+}
+message SendMessageResponse {
+  string status = 1; // "ok"
+}
+
+message JoinRoomRequest { string room = 1; string user = 2; }
+message JoinRoomResponse { string status = 1; }
+
+// Event pushed to websocket subscribers.
+message MessageEvent {
+  string room = 1;
+  string user = 2;
+  string text = 3;
+  int64 ts_unix_ms = 4;
+}
+
+// Presence updates (JOIN / LEAVE) pushed separately from chat text.
+message PresenceEvent {
+  string room = 1;
+  string user = 2;
+  enum Action { ACTION_UNKNOWN = 0; JOIN = 1; LEAVE = 2; }
+  Action action = 3;
+  int64 ts_unix_ms = 4;
+}

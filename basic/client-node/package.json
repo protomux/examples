@@ -1,5 +1,5 @@
 {
-  "name": "protomux-basic-client",
+  "name": "protomux-basic-client-node",
   "private": true,
   "type": "module",
   "version": "0.1.0",

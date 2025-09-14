@@ -97,7 +97,7 @@ export const App: React.FC = () => {
     if (!c) return;
     try {
       setPingResult("...");
-      const res = await c.request("ping", new Uint8Array());
+      const res = await c.request("status", new Uint8Array());
       setPingResult(new TextDecoder().decode(res));
     } catch (e: any) {
       setPingResult("error");
@@ -141,7 +141,7 @@ export const App: React.FC = () => {
         >
           Ping
         </button>
-        {pingResult && <span>pong: {pingResult}</span>}
+        {pingResult && <span>status: {pingResult}</span>}
       </div>
       <form onSubmit={onAdd} style={{ marginBottom: "1rem" }}>
         <input

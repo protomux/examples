@@ -1,0 +1,27 @@
+{
+  "name": "protomux-chat-client-react",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc && vite build",
+    "preview": "vite preview",
+    "gen:ts": "mkdir -p src/gen/proto && PATH=\"$PATH:./node_modules/.bin\" protoc -I../proto --ts_proto_out=src/gen/proto --ts_proto_opt=esModuleInterop=true,outputServices=none,useExactTypes=false ../proto/chat.proto",
+    "gen:clean": "rm -rf src/gen && npm run gen:ts"
+  },
+  "dependencies": {
+    "@protomux/client": "file:../../../client-js",
+    "react": "^19.1.1",
+    "react-dom": "^19.1.1",
+    "react-router-dom": "^6.30.1"
+  },
+  "devDependencies": {
+    "@types/react": "^19.1.13",
+    "@types/react-dom": "^19.1.9",
+    "@vitejs/plugin-react": "^5.0.2",
+    "ts-proto": "^2.4.0",
+    "typescript": "^5.6.2",
+    "vite": "^7.1.5"
+  }
+}

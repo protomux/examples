@@ -1,4 +1,4 @@
-module chatserver
+module examples/chatserver
 
 go 1.25.0
 

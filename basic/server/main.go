@@ -7,8 +7,10 @@ import (
 	"syscall"
 	"time"
 
-	bookpb "github.com/protomux/examples/basic/server/generated"
+	bookpb "examples/basic/generated"
+
 	"github.com/protomux/protomux"
+	"github.com/protomux/protomux/middleware/cors"
 	"google.golang.org/protobuf/proto"
 )
 
@@ -26,6 +28,8 @@ func main() {
 		Debug:             true,
 	}
 	app := protomux.New(appCfg)
+	// Allow localhost origins for example usage (dev only)
+	app.UseUpgrade(cors.New([]string{"http://localhost:*", "https://localhost:*"}))
 
 	app.Use(func(c *protomux.Ctx) error {
 		return c.Next()

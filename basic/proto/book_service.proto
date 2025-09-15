@@ -1,6 +1,6 @@
 syntax = "proto3";
 package examples.book;
-option go_package = "github.com/protomux/examples/basic/server/gen/go/proto;bookpb";
+option go_package = "github.com/protomux/examples/basic/generated;bookpb";
 
 service BookService {
   rpc ListBooks (ListBooksRequest) returns (ListBooksResponse);

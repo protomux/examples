@@ -1,10 +1,11 @@
-# Book Service Example
+# Basic Service Example
 
-This example shows a simple Book service over a single WebSocket using **protomux**. It demonstrates:
+Demonstrates a simple Book service over a single WebSocket using **protomux** (and optionally gRPC if you wire it). It includes:
 
-- Protobuf request/response handlers (ListBooks, CreateBook)
-- In‑memory domain model decoupled from generated proto types
+- Protobuf request/response handlers (`ListBooks`, `CreateBook`) registered with `app.RegisterProtoTyped`
+- In‑memory store decoupled from generated proto types
 - Manual TypeScript codecs + WebSocket client speaking the binary envelope
+- (Optional) Dual transport: you can expose the same service via gRPC alongside the websocket
 
 ## Layout
 ```
@@ -22,14 +23,14 @@ examples/basic/
   generated/ (optional) # If you choose to place generated Go here (see notes)
 ```
 
-Currently the Go code for BookService may still reference the older path (`server/gen/go/...`). You can standardize to `generated/` by adjusting the `go_package` option and re‑running generation (steps below).
+Generated Go types are placed in `examples/basic/generated` (see `option go_package = "github.com/protomux/examples/basic/generated;bookpb"` in the proto).
 
 ## Protobuf Definitions
 `proto/book_service.proto` (simplified excerpt):
 ```proto
 syntax = "proto3";
 package examples.book;
-option go_package = "github.com/protomux/examples/basic/server/gen/go/proto;bookpb"; // adjust if relocating outputs
+option go_package = "github.com/protomux/examples/basic/generated;bookpb";
 
 message ListBooksRequest {}
 message Book { int32 id = 1; string title = 2; }
@@ -41,31 +42,38 @@ message CreateBookResponse { Book book = 1; }
 ## Generating Go Types (protoc direct)
 From repo root (ensure `protoc`, `protoc-gen-go`, `protoc-gen-go-grpc` in PATH):
 ```bash
-protoc \
-  --go_out=paths=source_relative:examples/basic/server/gen/go/proto \
-  --go-grpc_out=paths=source_relative:examples/basic/server/gen/go/proto \
-  examples/basic/proto/book_service.proto
-```
-If you change `option go_package` to use a `generated` folder:
-```bash
-# Edit proto: option go_package = "github.com/protomux/examples/basic/generated;bookpb";
 mkdir -p examples/basic/generated
 protoc \
   --go_out=paths=source_relative:examples/basic/generated \
   --go-grpc_out=paths=source_relative:examples/basic/generated \
   examples/basic/proto/book_service.proto
 ```
-Run `go mod tidy` inside `examples/basic/server` after relocating output paths.
+Run `go mod tidy` inside `examples/basic/server` after generation.
 
-## Manual TypeScript Types
-Instead of a TS protoc plugin, the client uses a hand‑written minimal codec (`client/src/book_service.ts`) built on `protobufjs/minimal`.
+## TypeScript Types (Generated)
+The Node client (`examples/basic/client-node`) generates TypeScript types with [ts-proto]. Output goes to `src/gen/proto`.
 
-Key exported constants map to fully‑qualified proto names used in routing:
+Generate (from `examples/basic/client-node` directory):
+```bash
+npm run gen:clean
 ```
-TYPE_LIST_BOOKS_REQ  = examples.book.ListBooksRequest
-TYPE_LIST_BOOKS_RESP = examples.book.ListBooksResponse
-TYPE_CREATE_BOOK_REQ = examples.book.CreateBookRequest
-TYPE_CREATE_BOOK_RESP= examples.book.CreateBookResponse
+Underlying command (for reference):
+```bash
+protoc -I.. \
+  --ts_proto_out=src/gen \
+  --ts_proto_opt=esModuleInterop=true,outputServices=none,useExactTypes=false \
+  ../proto/book_service.proto
+```
+Import examples:
+```ts
+import { ListBooksRequest, CreateBookRequest } from './gen/proto/book_service';
+```
+Fully-qualified message names used on the wire:
+```
+examples.book.ListBooksRequest
+examples.book.ListBooksResponse
+examples.book.CreateBookRequest
+examples.book.CreateBookResponse
 ```
 
 ## Envelope Format (Client & Server)
@@ -79,13 +87,28 @@ Varint:   Payload length (M)
 M bytes:  Payload (protobuf binary)
 ```
 
+## Registering Handlers (Go)
+Example using the reflective typed registration helper:
+```go
+app.RegisterProtoTyped(&bookpb.ListBooksRequest{}, &bookpb.ListBooksResponse{}, func(c *protomux.Ctx, req *bookpb.ListBooksRequest) (*bookpb.ListBooksResponse, error) {
+  books := db.List()
+  out := make([]*bookpb.Book, 0, len(books))
+  for _, b := range books { out = append(out, &bookpb.Book{Id: b.ID, Title: b.Title}) }
+  return &bookpb.ListBooksResponse{Books: out}, nil
+})
+app.RegisterProtoTyped(&bookpb.CreateBookRequest{}, &bookpb.CreateBookResponse{}, func(c *protomux.Ctx, req *bookpb.CreateBookRequest) (*bookpb.CreateBookResponse, error) {
+  b := db.Create(req.GetTitle())
+  return &bookpb.CreateBookResponse{Book: &bookpb.Book{Id: b.ID, Title: b.Title}}, nil
+})
+```
+
 ## Running the Go Server
 Terminal 1:
 ```bash
 cd examples/basic/server
 go run .
 ```
-(Default listens on :8080 and upgrades at /ws.)
+WebSocket endpoint: `ws://localhost:3000/ws` (if you set `HTTPAddr: ":3000"` in config) or `:8080` for the default.
 
 ## Running the TypeScript Client
 Install deps & run (Terminal 2):

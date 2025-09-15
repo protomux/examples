@@ -1,4 +1,4 @@
-module github.com/protomux/examples/basic/server
+module examples/basic
 
 go 1.25.0
 

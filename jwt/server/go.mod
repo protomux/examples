@@ -1,4 +1,4 @@
-module github.com/protomux/examples/jwt/server
+module examples/jwt
 
 go 1.25.1
 

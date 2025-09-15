@@ -7,14 +7,17 @@ import (
 	"net/http"
 	"time"
 
-	chatpb "chatserver/generated"
+	chatpb "examples/chatserver/generated"
 
 	"github.com/protomux/protomux"
+	"github.com/protomux/protomux/middleware/cors"
 	"google.golang.org/protobuf/proto"
 )
 
 func main() {
 	app := protomux.New(nil)
+	// Allow localhost origins during development (any port)
+	app.UseUpgrade(cors.New([]string{"http://localhost:*", "https://localhost:*"}))
 
 	// Register SendMessage handler (raw for now): expects JSON of SendMessageRequest
 	app.RegisterProto(&chatpb.SendMessageRequest{}, &chatpb.SendMessageResponse{}, func(c *protomux.Ctx, msg proto.Message) (proto.Message, error) {

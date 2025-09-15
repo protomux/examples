@@ -2,12 +2,14 @@ package main
 
 import (
 	"context"
+	"log"
 	"log/slog"
 	"os/signal"
 	"syscall"
 	"time"
 
 	"github.com/protomux/protomux"
+	"github.com/protomux/protomux/middleware/jwt"
 )
 
 func main() {
@@ -20,13 +22,16 @@ func main() {
 		Debug:             true,
 	}
 	app := protomux.New(appCfg)
-	// Configure JWT auth via upgrade middleware.
-	app.UseUpgrade(protomux.JWTAuth([]byte("dev-secret-change")))
+	// Configure JWT auth via new middleware subpackage upgrade middleware.
+	app.UseUpgrade(jwt.New([]byte("dev-secret-change")))
 
 	app.Use(func(c *protomux.Ctx) error {
 		return c.Next()
 	})
 	_ = app.Register("status", "ok", func(c *protomux.Ctx, payload any) (any, error) {
+		// TODO log data from jwt token, e.g. user id
+		claims, _ := protomux.JWTClaimsFromContext(c.BaseContext())
+		log.Printf("claims: %+v", claims)
 		return []byte("ok"), nil
 	})
 

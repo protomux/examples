@@ -16,7 +16,7 @@ function ChatRoom() {
   const [search] = useSearchParams();
   const user = search.get("user") || "anonymous";
 
-  const { messages, presence, send } = useChat(room, user);
+  const { messages, presence, errors, send, clearErrors } = useChat(room, user);
   const [draft, setDraft] = useState("");
 
   return (
@@ -61,6 +61,18 @@ function ChatRoom() {
           </li>
         ))}
       </ul>
+      {errors.length > 0 && (
+        <div style={{ marginTop: 16 }}>
+          <h3>Errors <button onClick={clearErrors} style={{ marginLeft: 8 }}>clear</button></h3>
+          <ul>
+            {errors.map((e, i) => (
+              <li key={i} style={{ color: '#b00020' }}>
+                [{new Date(e.ts).toLocaleTimeString()}] {e.code !== undefined ? `code ${e.code}: ` : ''}{e.message}
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
       <h3>Presence</h3>
       <ul>
         {presence.map((p: PresenceEvent, i) => (

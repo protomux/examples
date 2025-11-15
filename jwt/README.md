@@ -1,55 +1,161 @@
 # JWT Example
 
-Secure a Protomux websocket with JWT authentication.
+Demonstrates how to secure a Protomux WebSocket connection with JWT authentication. This example shows token-based authentication and per-handler authorization.
+
+## Overview
+
+This example implements JWT-based authentication for WebSocket connections. It demonstrates:
+- WebSocket endpoint with optional JWT authentication via `Authorization: Bearer <token>` header
+- JWT upgrade middleware using `jwt.New(secret)` from `middleware/jwt`
+- Per-handler authorization with custom claims inspection
+- Simple status RPC demonstrating both public and protected handlers
+- Node.js client example with Bearer token
 
 ## Features
-- WebSocket endpoint requiring `Authorization: Bearer <token>`
-- `app.UseUpgrade(protomux.JWTAuth(secret))` middleware
-- Simple status RPC + Node client example
-- Token generation helper utility
+
+- **JWT Authentication**: Token-based authentication using standard JWT tokens
+- **Optional Auth**: Middleware validates tokens when present but allows unauthenticated connections
+- **Custom Claims**: Access user identity and roles from JWT claims in handlers
+- **Per-Handler Authorization**: Fine-grained access control for individual endpoints
+- **Standard Bearer Tokens**: Uses industry-standard `Authorization: Bearer` header
 
 ## Run Server
+
 ```bash
 cd examples/jwt/server
 go run .
 ```
-Default websocket endpoint: `ws://localhost:3000/ws` (subprotocol `protomux.v1`).
+
+**WebSocket endpoint:** `ws://localhost:3000` (any path, commonly `/ws`)  
+**Subprotocol:** `protomux.v1`
+
+The server configures JWT middleware:
+
+```go
+import "github.com/protomux/protomux/middleware/jwt"
+
+app.UseUpgrade(jwt.New([]byte("dev-secret-change")))
+```
+
+This middleware is **optional** – it allows connections without tokens but validates and attaches claims when a token is present.
 
 ## Generate Token
-One-off (long expiry):
+
+Use the helper tool in the protomux repo:
+
 ```bash
-go run github.com/golang-jwt/jwt/v5/cmd/jwt --sign dev-secret-change --claims '{"sub":"demo","exp":4102444800}'
-```
-Or use the helper tool in repo:
-```bash
+cd /path/to/protomux
 go run ./protomux/tools/jwt-generate
 ```
 
-Export for Node client:
+This generates a token with the secret `dev-secret-change` and claims `{"sub":"demo","role":"admin"}`.
+
+**For use in scripts**, export the token:
+
 ```bash
-export JWT_TOKEN=$(go run github.com/golang-jwt/jwt/v5/cmd/jwt --sign dev-secret-change --claims '{"sub":"demo","exp":4102444800}')
+export JWT_TOKEN=$(go run ./protomux/tools/jwt-generate)
 ```
+
+**Note:** The secret must match the one used in the server (`dev-secret-change` in this example).
 
 ## Run Node Client
+
 ```bash
 cd examples/jwt/client-node
-npm install
+npm install   # first time only
+JWT_TOKEN=<your-token> npm run dev
+```
+
+**Or with token generation:**
+
+```bash
+export JWT_TOKEN=$(go run ../../protomux/tools/jwt-generate)
 npm run dev
 ```
-You should see `status response: ok`.
+
+**Expected output:**
+
+```
+Connected to WebSocket
+Sending status request...
+Status response: ok
+Sending admin.echo request...
+Admin echo response: hello admin
+```
 
 ## Handler Registration
-Status handler pattern (typed):
+
+### Public Handler (No Auth Required)
+
 ```go
-app.Register("status", "status", func(c *protomux.Ctx, payload any) (any, error) {
+app.Register("status", "ok", func(c *protomux.Ctx, payload any) (any, error) {
+    claims, _ := protomux.JWTClaimsFromContext(c.BaseContext())
+    log.Printf("status claims: %+v", claims)  // nil if no token
     return []byte("ok"), nil
 })
 ```
 
+### Protected Handler (Auth Required)
+
+```go
+adminAuth := func(c *protomux.Ctx) error {
+    claims, _ := protomux.JWTClaimsFromContext(c.BaseContext())
+    if claims == nil {
+        return errors.New("missing claims")
+    }
+    if v, ok := claims["role"]; !ok || v != "admin" {
+        return errors.New("forbidden: admin role required")
+    }
+    return nil
+}
+
+app.RegisterWithAuth("admin.echo", "admin.ok", adminAuth, 
+    func(c *protomux.Ctx, payload any) (any, error) {
+        return payload, nil
+    })
+```
+
 ## Custom Claims
-Implement your own middleware if you need custom claim extraction or revocation checks.
+
+The JWT middleware attaches claims as `jwt.MapClaims` to the connection context. Access them in handlers:
+
+```go
+import "github.com/protomux/protomux"
+
+claims, ok := protomux.JWTClaimsFromContext(c.BaseContext())
+if !ok || claims == nil {
+    return errors.New("unauthorized")
+}
+
+userID, _ := claims["sub"].(string)
+role, _ := claims["role"].(string)
+```
+
+Implement custom middleware for:
+
+- Token revocation checks (check against a database/cache)
+- Custom claim validation
+- Role-based access control (RBAC)
+- Tenant isolation
 
 ## Production Notes
-- Rotate JWT secret periodically
-- Use short-lived tokens + refresh flow outside websocket
-- Consider rate limiting per connection (library provides token bucket fields)
+
+- **Rotate secrets**: Change JWT signing secret periodically
+- **Short-lived tokens**: Use expiration times (`exp` claim) and implement refresh flow
+- **HTTPS only**: Always use TLS in production
+- **Rate limiting**: Combine with rate limit middleware (see `middleware/ratelimit`)
+- **Secure secrets**: Store secrets in environment variables or secret management systems, never in code
+
+## Next Steps
+
+- Implement token refresh mechanism
+- Add role-based access control (RBAC) for more granular permissions
+- Integrate with OAuth2/OIDC providers
+- Add token revocation list (blacklist) using Redis
+- Implement rate limiting per user (see [Thundering Herd example](../thunderingherd/README.md))
+
+## Related Documentation
+
+- [Main Protomux README](../../protomux/README.md) - Framework documentation
+- [Middleware Documentation](../../protomux/README.md#middleware) - Available middleware
+- [Examples Overview](../README.md) - All available examples

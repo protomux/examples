@@ -1,19 +1,55 @@
 import React, { useCallback, useEffect, useRef, useState } from "react";
-import { ProtomuxClient, encodeMessage, decodeMessage } from "@protomux/client";
+import { ProtomuxClient } from "@protomux/client";
 import {
   ListBooksRequest,
   ListBooksResponse,
   CreateBookRequest,
+  CreateBookResponse,
 } from "./gen/proto/book_service";
 
-const TYPE_LIST_BOOKS_REQ = "examples.book.ListBooksRequest";
-const TYPE_CREATE_BOOK_REQ = "examples.book.CreateBookRequest";
+interface AddBookFormProps {
+  client: ProtomuxClient | null;
+  onBookAdded: () => void;
+  onError: (error: string) => void;
+}
 
-// encodeMessage / decodeMessage now provided by @protomux/client
-
-export const App: React.FC = () => {
-  const [books, setBooks] = useState<{ id: number; title: string }[]>([]);
+function AddBookForm({ client, onBookAdded, onError }: AddBookFormProps) {
   const [title, setTitle] = useState("");
+
+  const onSubmit = useCallback(
+    async (e: React.FormEvent) => {
+      e.preventDefault();
+      if (!client || !title.trim()) return;
+      try {
+        await client.send(
+          "examples.book.CreateBookRequest",
+          { title } as CreateBookRequest,
+          CreateBookRequest,
+          CreateBookResponse
+        );
+        setTitle("");
+        onBookAdded();
+      } catch (e: any) {
+        onError(e.message || String(e));
+      }
+    },
+    [title, client, onBookAdded, onError]
+  );
+
+  return (
+    <form onSubmit={onSubmit} style={{ marginBottom: "1rem" }}>
+      <input
+        value={title}
+        onChange={(e) => setTitle(e.target.value)}
+        placeholder="Title"
+      />
+      <button type="submit">Add</button>
+    </form>
+  );
+};
+
+export function App() {
+  const [books, setBooks] = useState<{ id: number; title: string }[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [pingResult, setPingResult] = useState<string | null>(null);
@@ -24,15 +60,32 @@ export const App: React.FC = () => {
     if (!c) return;
     try {
       setLoading(true);
-      const reqBytes = encodeMessage({}, ListBooksRequest);
-      const resBytes = await c.request(TYPE_LIST_BOOKS_REQ, reqBytes);
-      const res = decodeMessage<ListBooksResponse>(resBytes, ListBooksResponse);
+      const res = await c.send(
+        "examples.book.ListBooksRequest",
+        {},
+        ListBooksRequest,
+        ListBooksResponse
+      );
       setBooks(res.books as any);
       setError(null);
     } catch (e: any) {
       setError(e.message || String(e));
     } finally {
       setLoading(false);
+    }
+  }, []);
+
+  const onPing = useCallback(async () => {
+    const c = clientRef.current;
+    if (!c) return;
+    try {
+      setPingResult("...");
+      // For non-protobuf endpoints, use sendRaw
+      const res = await c.sendRaw("status", new Uint8Array());
+      setPingResult(new TextDecoder().decode(res));
+    } catch (e: any) {
+      setPingResult("error");
+      setError(e.message || String(e));
     }
   }, []);
 
@@ -45,24 +98,22 @@ export const App: React.FC = () => {
       attempt++;
       const client = new ProtomuxClient("ws://localhost:3000/ws");
       clientRef.current = client;
-      const ws: any = (client as any).ws;
-      if (ws) {
-        ws.addEventListener("open", () => {
-          console.log("[ws] open (attempt", attempt, ")");
-          listBooks(client).catch((err) =>
-            setError(err.message || String(err))
-          );
-        });
-        ws.addEventListener("close", (ev: CloseEvent) => {
-          console.log("[ws] close", ev.code, ev.reason);
-          if (!stopped && ev.code !== 1000) {
-            setTimeout(connect, Math.min(5000, 500 * attempt));
-          }
-        });
-        ws.addEventListener("error", (ev: Event) => {
-          console.log("[ws] error", ev);
-        });
-      }
+
+      client.onOpen(() => {
+        console.log("[ws] open (attempt", attempt, ")");
+        listBooks(client).catch((err) => setError(err.message || String(err)));
+      });
+
+      client.onClose((info) => {
+        console.log("[ws] close", info.code, info.reason);
+        if (!stopped && info.code !== 1000) {
+          setTimeout(connect, Math.min(5000, 500 * attempt));
+        }
+      });
+
+      client.onError((ev) => {
+        console.log("[ws] error", ev);
+      });
     };
     connect();
     return () => {
@@ -71,39 +122,15 @@ export const App: React.FC = () => {
     };
   }, [listBooks]);
 
-  const onAdd = useCallback(
-    async (e: React.FormEvent) => {
-      e.preventDefault();
-      if (!title.trim()) return;
-      const c = clientRef.current;
-      if (!c) return;
-      try {
-        const reqBytes = encodeMessage(
-          { title } as CreateBookRequest,
-          CreateBookRequest
-        );
-        await c.request(TYPE_CREATE_BOOK_REQ, reqBytes);
-        setTitle("");
-        listBooks();
-      } catch (e: any) {
-        setError(e.message || String(e));
-      }
-    },
-    [title, listBooks]
-  );
-
-  const onPing = useCallback(async () => {
-    const c = clientRef.current;
-    if (!c) return;
-    try {
-      setPingResult("...");
-      const res = await c.request("status", new Uint8Array());
-      setPingResult(new TextDecoder().decode(res));
-    } catch (e: any) {
-      setPingResult("error");
-      setError(e.message || String(e));
-    }
-  }, []);
+  const getReadyStateDisplay = () => {
+    const rs = clientRef.current?.readyState;
+    if (rs === undefined) return "N/A";
+    
+    const stateLabels = ["CONNECTING", "OPEN", "CLOSING", "CLOSED"];
+    const stateLabel = stateLabels[rs] ?? "UNKNOWN";
+    
+    return `${rs} (${stateLabel})`;
+  };
 
   return (
     <div style={{ fontFamily: "sans-serif", margin: "2rem", maxWidth: 600 }}>
@@ -111,21 +138,7 @@ export const App: React.FC = () => {
       <div
         style={{ fontSize: "0.8rem", color: "#666", marginBottom: "0.5rem" }}
       >
-        WS state:{" "}
-        {(() => {
-          const rs = clientRef.current?.readyState;
-          return rs === undefined
-            ? "N/A"
-            : `${rs} (${
-                rs === 0
-                  ? "CONNECTING"
-                  : rs === 1
-                  ? "OPEN"
-                  : rs === 2
-                  ? "CLOSING"
-                  : "CLOSED"
-              })`;
-        })()}
+        WS state: {getReadyStateDisplay()}
       </div>
       {error && (
         <div style={{ color: "red", marginBottom: "0.5rem" }}>
@@ -143,14 +156,11 @@ export const App: React.FC = () => {
         </button>
         {pingResult && <span>status: {pingResult}</span>}
       </div>
-      <form onSubmit={onAdd} style={{ marginBottom: "1rem" }}>
-        <input
-          value={title}
-          onChange={(e) => setTitle(e.target.value)}
-          placeholder="Title"
-        />
-        <button type="submit">Add</button>
-      </form>
+      <AddBookForm
+        client={clientRef.current}
+        onBookAdded={listBooks}
+        onError={setError}
+      />
       <button onClick={() => listBooks()} style={{ marginBottom: "1rem" }}>
         Refresh
       </button>
@@ -163,4 +173,4 @@ export const App: React.FC = () => {
       </ul>
     </div>
   );
-};
+}

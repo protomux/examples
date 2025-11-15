@@ -152,10 +152,10 @@ Implement custom middleware for:
 - Add role-based access control (RBAC) for more granular permissions
 - Integrate with OAuth2/OIDC providers
 - Add token revocation list (blacklist) using Redis
-- Implement rate limiting per user (see [Thundering Herd example](../thunderingherd/README.md))
+- Implement rate limiting per user (see [Thundering Herd example](https://github.com/protomux/examples/tree/main/thunderingherd))
 
 ## Related Documentation
 
-- [Main Protomux README](../../protomux/README.md) - Framework documentation
-- [Middleware Documentation](../../protomux/README.md#middleware) - Available middleware
-- [Examples Overview](../README.md) - All available examples
+- [Main Protomux README](https://github.com/protomux/protomux) - Framework documentation
+- [Middleware Documentation](https://github.com/protomux/protomux#middleware) - Available middleware
+- [Examples Overview](https://github.com/protomux/examples) - All available examples

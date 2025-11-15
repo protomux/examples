@@ -198,12 +198,12 @@ app := protomux.New(&protomux.Config{
 - Implement client-side retry logic with exponential backoff
 - Load test with your expected connection patterns
 - Tune limits based on server capacity and traffic patterns
-- Combine with authentication (see [JWT example](../jwt/README.md))
+- Combine with authentication (see [JWT example](https://github.com/protomux/examples/tree/main/jwt))
 - Add per-user rate limiting using middleware
 
 ## Related Documentation
 
-- [THUNDERING_HERD.md](../../protomux/THUNDERING_HERD.md) - Detailed design document
-- [Server Configuration](../../protomux/README.md#configuration) - Full config reference
-- [Testing Guide](../../protomux/TESTING.md) - Testing strategies
-- [Examples Overview](../README.md) - All available examples
+- [THUNDERING_HERD.md](https://github.com/protomux/protomux/blob/main/THUNDERING_HERD.md) - Detailed design document
+- [Server Configuration](https://github.com/protomux/protomux#configuration) - Full config reference
+- [Testing Guide](https://github.com/protomux/protomux/blob/main/TESTING.md) - Testing strategies
+- [Examples Overview](https://github.com/protomux/examples) - All available examples

@@ -150,13 +150,13 @@ You can list books and create new ones via the UI.
 
 ## Next Steps
 
-- Add authentication (see [JWT example](../jwt/README.md))
+- Add authentication (see [JWT example](https://github.com/protomux/examples/tree/main/jwt))
 - Implement server push notifications (correlation ID = 0)
-- Add subscription/pub-sub features (see [Chat example](../chat/README.md))
+- Add subscription/pub-sub features (see [Chat example](https://github.com/protomux/examples/tree/main/chat))
 - Add error handling and retry logic in clients
-- Implement admission control (see [Thundering Herd example](../thunderingherd/README.md))
+- Implement admission control (see [Thundering Herd example](https://github.com/protomux/examples/tree/main/thunderingherd))
 
 ## Related Documentation
 
-- [Main Protomux README](../../protomux/README.md) - Framework documentation
-- [Examples Overview](../README.md) - All available examples
+- [Main Protomux README](https://github.com/protomux/protomux) - Framework documentation
+- [Examples Overview](https://github.com/protomux/examples) - All available examples

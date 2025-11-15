@@ -51,4 +51,4 @@ Connection admission control to prevent server overload:
 
 ## Next Steps
 
-See the [main protomux README](../protomux/README.md) for complete framework documentation.
+See the [main protomux README](https://github.com/protomux/protomux) for complete framework documentation.

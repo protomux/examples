@@ -146,7 +146,7 @@ if (msg.correlationId === 0) {
 
 ## Next Steps
 
-- Add user authentication (see [JWT example](../jwt/README.md))
+- Add user authentication (see [JWT example](https://github.com/protomux/examples/tree/main/jwt))
 - Implement message persistence with a database
 - Add private messaging between users
 - Implement typing indicators using presence events
@@ -155,6 +155,6 @@ if (msg.correlationId === 0) {
 
 ## Related Documentation
 
-- [Main Protomux README](../../protomux/README.md) - Framework documentation
-- [Pub/Sub Features](../../protomux/README.md#pubsub) - Pub/sub pattern details
-- [Examples Overview](../README.md) - All available examples
+- [Main Protomux README](https://github.com/protomux/protomux) - Framework documentation
+- [Pub/Sub Features](https://github.com/protomux/protomux#pubsub) - Pub/sub pattern details
+- [Examples Overview](https://github.com/protomux/examples) - All available examples

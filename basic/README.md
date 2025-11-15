@@ -83,9 +83,6 @@ npm run codegen
 **Import example:**
 
 ```ts
-**Import example:**
-
-```ts
 import { ListBooksRequest, CreateBookRequest } from './gen/proto/book_service';
 ```
 

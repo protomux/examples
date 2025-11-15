@@ -6,6 +6,7 @@
   "scripts": {
     "build": "tsc",
     "dev": "tsx src/main.ts",
+    "codegen": "npm run gen:ts",
     "gen:ts": "PATH=\"$PATH:./node_modules/.bin\" protoc -I.. --ts_proto_out=src/gen --ts_proto_opt=esModuleInterop=true,outputServices=none,useExactTypes=false ../proto/book_service.proto",
     "gen:clean": "rm -rf src/gen && mkdir -p src/gen && npm run gen:ts"
   },

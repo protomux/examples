@@ -3,7 +3,7 @@ module examples/basic
 go 1.25.0
 
 require (
-	github.com/protomux/protomux v0.0.0
+	github.com/protomux/protomux v1.0.0
 	github.com/stretchr/testify v1.11.1
 	google.golang.org/grpc v1.75.1
 	google.golang.org/protobuf v1.36.9
@@ -21,5 +21,3 @@ require (
 	google.golang.org/genproto/googleapis/rpc v0.0.0-20250707201910-8d1bb00bc6a7 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 )
-
-replace github.com/protomux/protomux => ../../../protomux

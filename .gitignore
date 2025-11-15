@@ -6,6 +6,12 @@
 node_modules/
 dist/
 
+# Go server binaries
+basic/server/basic
+jwt/server/jwt
+chat/server/chatserver
+thunderingherd/server/main
+
 # Misc
 npm-debug.log*
 yarn-debug.log*

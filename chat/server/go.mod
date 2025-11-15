@@ -3,7 +3,7 @@ module examples/chatserver
 go 1.25.0
 
 require (
-	github.com/protomux/protomux v0.0.0
+	github.com/protomux/protomux v1.0.0
 	google.golang.org/grpc v1.75.1
 	google.golang.org/protobuf v1.36.9
 )
@@ -17,5 +17,3 @@ require (
 	golang.org/x/time v0.13.0 // indirect
 	google.golang.org/genproto/googleapis/rpc v0.0.0-20250707201910-8d1bb00bc6a7 // indirect
 )
-
-replace github.com/protomux/protomux => ../../../protomux

@@ -8,7 +8,7 @@
     "dev": "tsx src/main.ts"
   },
   "dependencies": {
-    "@protomux/client": "file:../../../client-js",
+    "@protomux/client": "^1.0.0",
     "ws": "^8.18.0"
   },
   "devDependencies": {
